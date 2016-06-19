@@ -86,8 +86,16 @@ uint8_t cmd_read(void) {
 	return 1;
 }
 
+// TODO Set offsets
+const uint8_t digit_offsets[] = { 0, 0, 0, 0 };
+const uint8_t lcd_digits[] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F};
+
+extern uint8_t timer_color;
+
 // Sets timer digit in LEDs output buffer
 void set_timer_digit(uint8_t num, uint8_t digit) {
-	// TODO Implement!
+	uint8_t c, m;
+	for (c = digit_offsets[num], m = lcd_digits[digit]; c < digit_offsets[num] + 7; c++, m >>= 1)
+		leds_buffer[c] = (m & 1) ? timer_color : 0;
 }
 

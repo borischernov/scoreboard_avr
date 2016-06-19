@@ -12,4 +12,6 @@ void power_setup(void);
 uint8_t cmd_power(void);
 uint8_t cmd_ping(void);
 
+void diagnostics(void);
+
 #endif /* UTILS_H_ */

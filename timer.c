@@ -25,6 +25,10 @@ volatile uint8_t timer_state = 0;
 
 const uint8_t timer_limits[4] = {9, 5, 9, 9};
 
+uint8_t timer_color = 0xE0;
+int	timer_beep_freq = 1000;
+uint8_t timer_beep_duration = 6;
+
 volatile uint8_t	tick = 0;
 
 volatile uint8_t	sound_ticks = 0;
@@ -35,7 +39,7 @@ void timer_inc(void);
 void timer_dec(void);
 uint8_t timer_is_zero(void);
 void nosound(void);
-void beep(int freq, uint8_t duration);
+void beep(uint16_t freq, uint8_t duration);
 
 ISR(TIMER2_OVF_vect) {
 
@@ -55,7 +59,7 @@ ISR(TIMER2_OVF_vect) {
 			if (timer_is_zero()) {
 				timer_state &= ~TIMER_RUNNING;
 				if (timer_state & TIMER_BEEP) {
-					beep(1000, 6);
+					beep(timer_beep_freq, timer_beep_duration);
 				}
 			}
 		} else {
@@ -113,11 +117,11 @@ uint8_t timer_is_zero(void) {
 	return 1;
 }
 
-void beep(int freq, uint8_t duration) {
+void beep(uint16_t freq, uint8_t duration) {
 	sound_ticks = duration;
 
 	TIMSK &= ~(_BV(OCIE0) | _BV(TOIE0));						// Disable Timer0 interrupts
-	OCR0 = (uint8_t)(T0CLK / (2 * freq) - 1);					// Set output compare value
+	OCR0 = (uint8_t)(T0CLK / (freq << 1) - 1);					// Set output compare value
 	TCCR0 = _BV(WGM01) | _BV(COM00) | _BV(CS02);				// CTC mode, toggle OC0 on match, T0CLK = F_CPU / 256
 }
 
@@ -194,3 +198,17 @@ uint8_t cmd_beep(void) {
 	return 1;
 }
 
+// Set timer params
+// Params: <color> <beep_freq / 100> <beep duration, 1/4s>
+uint8_t cmd_set_timer_params(void) {
+	if (rx_buf.pkt.data_length != 3)
+		return 0;
+
+	timer_color = rx_buf.bytes[PKT_DATA_OFFSET];
+	timer_beep_freq = rx_buf.bytes[PKT_DATA_OFFSET + 1] * 100;
+	timer_beep_duration = rx_buf.bytes[PKT_DATA_OFFSET + 2];
+
+	rx_buf.pkt.data_length = 0;
+
+	return 1;
+}

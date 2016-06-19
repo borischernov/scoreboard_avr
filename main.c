@@ -19,6 +19,7 @@ extern volatile uint8_t leds_buffer[];
 int main(void) {
 
 	power_setup();
+	diagnostics();
 	timers_setup();
 	uart_setup();
 	leds_setup();

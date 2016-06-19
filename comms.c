@@ -30,14 +30,15 @@
 #define ACK					0x01
 #define NACK				0x00
 
-#define CMD_PING			0x01
-#define CMD_DISPLAY			0x02
-#define CMD_READ			0x03
-#define CMD_SET_TIMER_STATE	0x04
-#define CMD_SET_TIMER_VALUE 0x05
-#define CMD_GET_TIMER		0x06
-#define CMD_BEEP			0x07
-#define CMD_POWER			0x08
+#define CMD_PING				0x01
+#define CMD_DISPLAY				0x02
+#define CMD_READ				0x03
+#define CMD_SET_TIMER_STATE		0x04
+#define CMD_SET_TIMER_VALUE 	0x05
+#define CMD_GET_TIMER			0x06
+#define CMD_BEEP				0x07
+#define CMD_POWER				0x08
+#define CMD_SET_TIMER_PARAMS 	0x09
 
 volatile uint8_t *tx_ptr;
 volatile uint8_t tx_cnt = 0;
@@ -90,7 +91,7 @@ uint8_t calc_crc(void) {
 	return 0xFF - crc;
 }
 
-#define NUM_COMMANDS 8
+#define NUM_COMMANDS 9
 
 void process_packet() {
 	uint8_t cmd_ok;
@@ -103,7 +104,8 @@ void process_packet() {
 			cmd_set_timer_value,
 			cmd_get_timer,
 			cmd_beep,
-			cmd_power
+			cmd_power,
+			cmd_set_timer_params
 	};
 
 	cmd_ok = (rx_buf.pkt.command == 0 || rx_buf.pkt.command > NUM_COMMANDS) ? 0 : commands[rx_buf.pkt.command - 1]();
