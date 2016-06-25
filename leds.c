@@ -44,7 +44,7 @@ void leds_buffer_send(void) {
 		b = leds_buffer[c];
 		spi_send(0x80 | (b << 5));				// B
 		spi_send(0x80 | ((b >> 1) & 0x70));		// R
-		spi_send(0x80 | ((b << 2) & 0x70));		// R
+		spi_send(0x80 | ((b << 2) & 0x70));		// G
 	}
 	for(c = 0; c < LEDS_COUNT; c++)
 		spi_send(0);
@@ -87,7 +87,7 @@ uint8_t cmd_read(void) {
 }
 
 // TODO Set offsets
-const uint8_t digit_offsets[] = { 0, 0, 0, 0 };
+const uint8_t digit_offsets[] = { 65, 58, 50, 43 };
 const uint8_t lcd_digits[] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F};
 
 extern uint8_t timer_color;

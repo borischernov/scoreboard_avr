@@ -17,13 +17,16 @@ extern volatile uint8_t leds_buffer[];
 extern volatile packet rx_buf;
 
 volatile uint8_t timer_digits[4];
+volatile uint8_t clock_digits[6];
 volatile uint8_t timer_state = 0;
 
 #define TIMER_RUNNING		1
 #define TIMER_COUNTDOWN		2
 #define TIMER_BEEP			4
+#define SHOW_CLOCK			8
 
 const uint8_t timer_limits[4] = {9, 5, 9, 9};
+const uint8_t clock_limits[6] = {9, 5, 9, 5, 9, 2};
 
 uint8_t timer_color = 0xE0;
 int	timer_beep_freq = 1000;
@@ -38,6 +41,7 @@ volatile uint8_t	sound_ticks = 0;
 void timer_inc(void);
 void timer_dec(void);
 uint8_t timer_is_zero(void);
+void clock_inc(void);
 void nosound(void);
 void beep(uint16_t freq, uint8_t duration);
 
@@ -52,6 +56,8 @@ ISR(TIMER2_OVF_vect) {
 	tick = (tick + 1) & 0x03;
 	if (tick)
 		return;
+
+	clock_inc();
 
 	if (timer_state & TIMER_RUNNING) {
 		if (timer_state & TIMER_COUNTDOWN) {
@@ -81,6 +87,10 @@ void timers_setup(void) {
     while (ASSR & (_BV(TCN2UB) | _BV(TCR2UB) | _BV(OCR2UB))); 	// Wait for Busy flags to clear
     TIFR = _BV(TOV2);											// Clear interrupt flag
     TIMSK = _BV(TOIE2);											// Enable overflow interrupt
+
+	for (int c = 0; c < 4; c++) {
+		timer_digits[c] = 0;
+	}
 }
 
 void timer_dec(void) {
@@ -90,7 +100,7 @@ void timer_dec(void) {
 		timer_digits[c]--;
 		set_timer_digit(c, timer_digits[c]);
 		if (timer_digits[c] <= timer_limits[c])
-			return;
+			break;
 		timer_digits[c] = timer_limits[c];
 	}
 }
@@ -102,8 +112,28 @@ void timer_inc(void) {
 		timer_digits[c]++;
 		set_timer_digit(c, timer_digits[c]);
 		if (timer_digits[c] <= timer_limits[c])
-			return;
+			break;
 		timer_digits[c] = 0;
+	}
+}
+
+void clock_inc(void) {
+	uint8_t c;
+
+	for (c = 0; c < 6; c++) {
+		clock_digits[c]++;
+		if ((timer_state & SHOW_CLOCK) && c > 1)
+			set_timer_digit(c - 2, clock_digits[c]);
+		if (clock_digits[c] <= clock_limits[c])
+			break;
+		clock_digits[c] = 0;
+	}
+
+	if (clock_digits[5] == 2 && clock_digits[4] == 4) { // 24:00 => 00:00
+		clock_digits[5] = 0;
+		clock_digits[4] = 0;
+		set_timer_digit(2, 0);
+		set_timer_digit(3, 0);
 	}
 }
 
@@ -208,7 +238,47 @@ uint8_t cmd_set_timer_params(void) {
 	timer_beep_freq = rx_buf.bytes[PKT_DATA_OFFSET + 1] * 100;
 	timer_beep_duration = rx_buf.bytes[PKT_DATA_OFFSET + 2];
 
+	for (int c = 0; c < 4; c++) {
+		set_timer_digit(c, timer_digits[c]);
+	}
+
 	rx_buf.pkt.data_length = 0;
+
+	return 1;
+}
+
+// Set clock value
+// Params: <s> <s> <m> <m> <h> <h>
+// Response: none
+uint8_t cmd_set_clock_value(void) {
+	uint8_t c;
+
+	if (rx_buf.pkt.data_length != 6)
+		return 0;
+
+	for (c = 0; c < 6; c++)
+		if (rx_buf.bytes[PKT_DATA_OFFSET + c] > clock_limits[c])
+			return 0;
+
+	for (c = 0; c < 6; c++) {
+		clock_digits[c] = rx_buf.bytes[PKT_DATA_OFFSET + c];
+	}
+
+	rx_buf.pkt.data_length = 0;
+
+	return 1;
+}
+
+// Get clock value
+// Params: none
+// Response: <s> <s> <m> <m> <h> <h>
+uint8_t cmd_get_clock_value(void) {
+	uint8_t c;
+
+	for (c = 0; c < 6; c++)
+		rx_buf.bytes[PKT_DATA_OFFSET + c] = clock_digits[c];
+
+	rx_buf.pkt.data_length = 6;
 
 	return 1;
 }

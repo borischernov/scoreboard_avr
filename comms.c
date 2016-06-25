@@ -39,6 +39,8 @@
 #define CMD_BEEP				0x07
 #define CMD_POWER				0x08
 #define CMD_SET_TIMER_PARAMS 	0x09
+#define CMD_SET_CLOCK_VALUE 	0x0A
+#define CMD_GET_CLOCK_VALUE 	0x0B
 
 volatile uint8_t *tx_ptr;
 volatile uint8_t tx_cnt = 0;
@@ -91,7 +93,7 @@ uint8_t calc_crc(void) {
 	return 0xFF - crc;
 }
 
-#define NUM_COMMANDS 9
+#define NUM_COMMANDS 11
 
 void process_packet() {
 	uint8_t cmd_ok;
@@ -105,7 +107,9 @@ void process_packet() {
 			cmd_get_timer,
 			cmd_beep,
 			cmd_power,
-			cmd_set_timer_params
+			cmd_set_timer_params,
+			cmd_set_clock_value,
+			cmd_get_clock_value
 	};
 
 	cmd_ok = (rx_buf.pkt.command == 0 || rx_buf.pkt.command > NUM_COMMANDS) ? 0 : commands[rx_buf.pkt.command - 1]();

@@ -8,7 +8,7 @@
 #ifndef LEDS_H_
 #define LEDS_H_
 
-#define LEDS_COUNT 2
+#define LEDS_COUNT 90
 
 void leds_setup(void);
 void leds_buffer_send(void);
