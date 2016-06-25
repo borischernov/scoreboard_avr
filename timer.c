@@ -58,6 +58,8 @@ ISR(TIMER2_OVF_vect) {
 		return;
 
 	clock_inc();
+	if (timer_state & SHOW_CLOCK)
+		set_clock_separator(timer_state & 1);
 
 	if (timer_state & TIMER_RUNNING) {
 		if (timer_state & TIMER_COUNTDOWN) {

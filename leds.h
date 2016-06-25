@@ -18,5 +18,6 @@ uint8_t cmd_read(void);
 uint8_t cmd_display(void);
 
 void set_timer_digit(uint8_t num, uint8_t digit);
+void set_clock_separator(uint8_t on);
 
 #endif /* LEDS_H_ */

@@ -88,9 +88,14 @@ uint8_t cmd_read(void) {
 
 // TODO Set offsets
 const uint8_t digit_offsets[] = { 65, 58, 50, 43 };
+#define CLOCK_SEPARATOR_OFFSET	57
 const uint8_t lcd_digits[] = {0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F};
-
 extern uint8_t timer_color;
+
+// Switches clock separator on / off
+void set_clock_separator(uint8_t on) {
+	leds_buffer[CLOCK_SEPARATOR_OFFSET] = on ? timer_color : 0;
+}
 
 // Sets timer digit in LEDs output buffer
 void set_timer_digit(uint8_t num, uint8_t digit) {
