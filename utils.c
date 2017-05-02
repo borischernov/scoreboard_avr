@@ -19,7 +19,7 @@ extern volatile packet rx_buf;
 volatile uint8_t	spi_bit;
 volatile uint8_t	spi_buf;
 
-uint8_t	diag_code;
+uint8_t	diag_code = 0;
 
 #define DIAG_NO_CLOCK		1
 #define DIAG_NO_DATA		2
@@ -99,7 +99,7 @@ void diagnostics(void) {
 	sei();
 
 	// Push zeros
-	for (c = 0; c < LEDS_COUNT; c++) {
+	for (c = 0; c < LEDS_COUNT * 2; c++) {
 		spi_send(0);
 	}
 
@@ -107,8 +107,8 @@ void diagnostics(void) {
 	spi_buf = 0;
 	diag_code = 0;
 
-	// Push A5 to the strip 3 * leds + 1 times
-	for (c = 0; c <= LEDS_COUNT * 3; c++) {
+	// Push A5 to the strip 6 * leds + 1 times
+	for (c = 0; c <= LEDS_COUNT * 6; c++) {
 		spi_bit = 0;
 		spi_send(0xA5);
 		_delay_us(10);
@@ -116,7 +116,7 @@ void diagnostics(void) {
 			diag_code = DIAG_NO_CLOCK;
 			break;
 		}
-		if (c < LEDS_COUNT && spi_buf) {
+		if (c < LEDS_COUNT * 6 && spi_buf) {
 			diag_code = spi_buf == 0xA5 ? DIAG_STRIP_SHORT : DIAG_NO_DATA;
 			break;
 		}
@@ -130,4 +130,6 @@ void diagnostics(void) {
 
 	// Switch power off
 	PORTB &= ~_BV(POWER_PIN);
+
+	diag_code = 0;					// DISABLE DIAGNOSTICS
 }

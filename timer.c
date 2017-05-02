@@ -59,7 +59,7 @@ ISR(TIMER2_OVF_vect) {
 
 	clock_inc();
 	if (timer_state & SHOW_CLOCK)
-		set_clock_separator(timer_state & 1);
+		set_clock_separator(timer_digits[0] & 1);
 
 	if (timer_state & TIMER_RUNNING) {
 		if (timer_state & TIMER_COUNTDOWN) {
@@ -73,6 +73,14 @@ ISR(TIMER2_OVF_vect) {
 		} else {
 			timer_inc();
 		}
+	}
+}
+
+void show_timer(void) {
+	uint8_t c;
+
+	for (c = 0; c < 4; c++) {
+		set_timer_digit(c, timer_digits[c]);
 	}
 }
 
@@ -100,11 +108,12 @@ void timer_dec(void) {
 
 	for (c = 0; c < 4; c++) {
 		timer_digits[c]--;
-		set_timer_digit(c, timer_digits[c]);
 		if (timer_digits[c] <= timer_limits[c])
 			break;
 		timer_digits[c] = timer_limits[c];
 	}
+
+	show_timer();
 }
 
 void timer_inc(void) {
@@ -112,11 +121,12 @@ void timer_inc(void) {
 
 	for (c = 0; c < 4; c++) {
 		timer_digits[c]++;
-		set_timer_digit(c, timer_digits[c]);
 		if (timer_digits[c] <= timer_limits[c])
 			break;
 		timer_digits[c] = 0;
 	}
+
+	show_timer();
 }
 
 void clock_inc(void) {
@@ -124,8 +134,6 @@ void clock_inc(void) {
 
 	for (c = 0; c < 6; c++) {
 		clock_digits[c]++;
-		if ((timer_state & SHOW_CLOCK) && c > 1)
-			set_timer_digit(c - 2, clock_digits[c]);
 		if (clock_digits[c] <= clock_limits[c])
 			break;
 		clock_digits[c] = 0;
@@ -134,8 +142,12 @@ void clock_inc(void) {
 	if (clock_digits[5] == 2 && clock_digits[4] == 4) { // 24:00 => 00:00
 		clock_digits[5] = 0;
 		clock_digits[4] = 0;
-		set_timer_digit(2, 0);
-		set_timer_digit(3, 0);
+	}
+
+	if (timer_state & SHOW_CLOCK) {
+		for (c = 2; c < 6; c++) {
+			set_timer_digit(c - 2, clock_digits[c]);
+		}
 	}
 }
 
@@ -264,6 +276,9 @@ uint8_t cmd_set_clock_value(void) {
 
 	for (c = 0; c < 6; c++) {
 		clock_digits[c] = rx_buf.bytes[PKT_DATA_OFFSET + c];
+		if ((timer_state & SHOW_CLOCK) && c > 1) {
+			set_timer_digit(c - 2, clock_digits[c]);
+		}
 	}
 
 	rx_buf.pkt.data_length = 0;

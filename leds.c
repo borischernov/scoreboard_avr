@@ -23,7 +23,7 @@ void leds_setup(void)
 	uint8_t c;
 
 	DDRB |= _BV(PB4)| _BV(PB5) | _BV(PB7);	 	// Set MOSI , SCK , and SS output
-	SPCR = _BV(SPE)| _BV(MSTR);					// Enable SPI, Master, set clock rate fck/4
+	SPCR = _BV(SPE)| _BV(MSTR) | _BV(SPR0);		// Enable SPI, Master, set clock rate fck/4
 
 	for(c = 0; c < LEDS_COUNT; c++)
 		leds_buffer[c] = 0;
@@ -45,8 +45,11 @@ void leds_buffer_send(void) {
 		spi_send(0x80 | (b << 5));				// B
 		spi_send(0x80 | ((b >> 1) & 0x70));		// R
 		spi_send(0x80 | ((b << 2) & 0x70));		// G
+		spi_send(0x80);							// Second half of SPD8806 is not used
+		spi_send(0x80);
+		spi_send(0x80);
 	}
-	for(c = 0; c < LEDS_COUNT; c++)
+	for(c = 0; c < LEDS_COUNT * 2; c++)
 		spi_send(0);
 }
 
